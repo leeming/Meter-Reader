@@ -4,11 +4,17 @@
  */
 
 #include <Wire.h>
+#include <Time.h>  
+
+#define TIME_MSG_LEN  11   // time sync to PC is HEADER followed by unix time_t as ten ascii digits
+#define TIME_HEADER  'T'   // Header tag for serial time sync message
+#define TIME_REQUEST  7    // ASCII bell character requests a time sync message 
+
 
 int clockAddress = 0x68;  // This is the I2C address
 int command = 0;  // This is the command char, in ascii form, sent from the serial port     
 long previousMillis = 0;  // will store last time Temp was updated
-byte second, minute, hour, dayOfWeek, dayOfMonth, month, year;
+byte secondb, minuteb, hourb, dayOfWeekb, dayOfMonthb, monthb, yearb;
 byte test; 
 
 // Convert normal decimal numbers to binary coded decimal
@@ -31,46 +37,47 @@ byte bcdToDec(byte val)
 void setDateDs1307()                
 {
   // Use of (byte) type casting and ascii math to achieve result.  
-  second = (byte) ((Serial.read() - 48) * 10 + (Serial.read() - 48)); 
-  minute = (byte) ((Serial.read() - 48) *10 +  (Serial.read() - 48));
-  hour  = (byte) ((Serial.read() - 48) *10 +  (Serial.read() - 48));
-  dayOfWeek = (byte) (Serial.read() - 48);
-  dayOfMonth = (byte) ((Serial.read() - 48) *10 +  (Serial.read() - 48));
-  month = (byte) ((Serial.read() - 48) *10 +  (Serial.read() - 48));
-  year= (byte) ((Serial.read() - 48) *10 +  (Serial.read() - 48));
+  secondb = (byte) ((Serial.read() - 48) * 10 + (Serial.read() - 48)); 
+  minuteb = (byte) ((Serial.read() - 48) *10 +  (Serial.read() - 48));
+  hourb  = (byte) ((Serial.read() - 48) *10 +  (Serial.read() - 48));
+  dayOfWeekb = (byte) (Serial.read() - 48);
+  dayOfMonthb = (byte) ((Serial.read() - 48) *10 +  (Serial.read() - 48));
+  monthb = (byte) ((Serial.read() - 48) *10 +  (Serial.read() - 48));
+  yearb= (byte) ((Serial.read() - 48) *10 +  (Serial.read() - 48));
   Wire.beginTransmission(clockAddress);
   Wire.write(byte(0x00));
-  Wire.write(decToBcd(second));  // 0 to bit 7 starts the clock
-  Wire.write(decToBcd(minute));
-  Wire.write(decToBcd(hour));    // If you want 12 hour am/pm you need to set
+  Wire.write(decToBcd(secondb));  // 0 to bit 7 starts the clock
+  Wire.write(decToBcd(minuteb));
+  Wire.write(decToBcd(hourb));    // If you want 12 hour am/pm you need to set
   // bit 6 (also need to change readDateDs1307)
-  Wire.write(decToBcd(dayOfWeek));
-  Wire.write(decToBcd(dayOfMonth));
-  Wire.write(decToBcd(month));
-  Wire.write(decToBcd(year));
+  Wire.write(decToBcd(dayOfWeekb));
+  Wire.write(decToBcd(dayOfMonthb));
+  Wire.write(decToBcd(monthb));
+  Wire.write(decToBcd(yearb));
   Wire.endTransmission();
 }
 
 void setDate()                
 {
   // Use of (byte) type casting and ascii math to achieve result.  
-  second = (byte) 0; 
-  minute = (byte) 15;
-  hour  = (byte) 21;
-  dayOfWeek = (byte) 1;
-  dayOfMonth = (byte) 26;
-  month = (byte) 3;
-  year= (byte) 12;
+  secondb = (byte) 30; 
+  minuteb = (byte) 45;
+  hourb  = (byte) 23;
+  dayOfWeekb = (byte) 3;
+  dayOfMonthb = (byte) 11;
+  monthb = (byte) 4;
+  yearb= (byte) 2012;
+  
   Wire.beginTransmission(clockAddress);
   Wire.write(byte(0x00));
-  Wire.write(decToBcd(second));  // 0 to bit 7 starts the clock
-  Wire.write(decToBcd(minute));
-  Wire.write(decToBcd(hour));    // If you want 12 hour am/pm you need to set
+  Wire.write(decToBcd(secondb));  // 0 to bit 7 starts the clock
+  Wire.write(decToBcd(minuteb));
+  Wire.write(decToBcd(hourb));    // If you want 12 hour am/pm you need to set
   // bit 6 (also need to change readDateDs1307)
-  Wire.write(decToBcd(dayOfWeek));
-  Wire.write(decToBcd(dayOfMonth));
-  Wire.write(decToBcd(month));
-  Wire.write(decToBcd(year));
+  Wire.write(decToBcd(dayOfWeekb));
+  Wire.write(decToBcd(dayOfMonthb));
+  Wire.write(decToBcd(monthb));
+  Wire.write(decToBcd(yearb));
   Wire.endTransmission();
 }
 
@@ -84,33 +91,35 @@ void getDateDs1307() {
   Wire.requestFrom(clockAddress, 7);
 
   // A few of these need masks because certain bits are control bits
-  second     = bcdToDec(Wire.read() & 0x7f);
-  minute     = bcdToDec(Wire.read());
+  secondb     = bcdToDec(Wire.read() & 0x7f);
+  minuteb     = bcdToDec(Wire.read());
   
   // Need to change this if 12 hour am/pm
-  hour       = bcdToDec(Wire.read() & 0x3f);  
-  dayOfWeek  = bcdToDec(Wire.read());
-  dayOfMonth = bcdToDec(Wire.read());
-  month      = bcdToDec(Wire.read());
-  year       = bcdToDec(Wire.read());
+  hourb       = bcdToDec(Wire.read() & 0x3f);  
+  dayOfWeekb  = bcdToDec(Wire.read());
+  dayOfMonthb = bcdToDec(Wire.read());
+  monthb      = bcdToDec(Wire.read());
+  yearb       = bcdToDec(Wire.read());
 
-  Serial.print(hour, DEC);
+  Serial.print(hourb, DEC);
   Serial.print(":");
-  Serial.print(minute, DEC);
+  Serial.print(minuteb, DEC);
   Serial.print(":");
-  Serial.print(second, DEC);
+  Serial.print(secondb, DEC);
   Serial.print("  ");
-  Serial.print(dayOfMonth, DEC);
+  Serial.print(dayOfMonthb, DEC);
   Serial.print("/");
-  Serial.print(month, DEC);
+  Serial.print(monthb, DEC);
   Serial.print("/");
-  Serial.print(year, DEC);
+  Serial.print(yearb, DEC);
 
 }
 
 
 void timeSetup() {
   Serial.println("Setting up Time module");
+  setTime((int)hourb, (int)minuteb, (int)secondb, (int)dayOfMonthb, (int)monthb, (int)yearb);
+  
   Wire.begin();
 }
 
@@ -125,15 +134,15 @@ String getTimestamp() {
   Wire.requestFrom(clockAddress, 7);
 
   // A few of these need masks because certain bits are control bits
-  second     = bcdToDec(Wire.read() & 0x7f);
-  minute     = bcdToDec(Wire.read());
+  secondb     = bcdToDec(Wire.read() & 0x7f);
+  minuteb     = bcdToDec(Wire.read());
   
   // Need to change this if 12 hour am/pm
-  hour       = bcdToDec(Wire.read() & 0x3f);  
-  dayOfWeek  = bcdToDec(Wire.read());
-  dayOfMonth = bcdToDec(Wire.read());
-  month      = bcdToDec(Wire.read());
-  year       = bcdToDec(Wire.read());
+  hourb       = bcdToDec(Wire.read() & 0x3f);  
+  dayOfWeekb  = bcdToDec(Wire.read());
+  dayOfMonthb = bcdToDec(Wire.read());
+  monthb      = bcdToDec(Wire.read());
+  yearb       = bcdToDec(Wire.read());
 
 /*
   String toReturn = (int)hour+":";
@@ -146,37 +155,12 @@ String getTimestamp() {
 
 
 
-  return (String)hour+":"+(String)minute+":"+(String)second+
-    " "+(String)dayOfMonth+"/"+(String)month+"/"+(String)year;
+  return (String)hourb+":"+(String)minuteb+":"+(String)secondb+
+    " "+(String)dayOfMonthb+"/"+(String)monthb+"/"+(String)yearb;
   
 }
 
-int getTimestampi()
+long getTimestampi()
 {
-  // Reset the register pointer
-  Wire.beginTransmission(clockAddress);
-  Wire.write(byte(0x00));
-  Wire.endTransmission();
-
-  Wire.requestFrom(clockAddress, 7);
-
-  // A few of these need masks because certain bits are control bits
-  second     = bcdToDec(Wire.read() & 0x7f);
-  minute     = bcdToDec(Wire.read());
-  
-  // Need to change this if 12 hour am/pm
-  hour       = bcdToDec(Wire.read() & 0x3f);  
-  dayOfWeek  = bcdToDec(Wire.read());
-  dayOfMonth = bcdToDec(Wire.read());
-  month      = bcdToDec(Wire.read());
-  year       = bcdToDec(Wire.read());
-
-  int timestamp = year;
-  timestamp = (timestamp<<8) + month;
-  timestamp = (timestamp<<8) + dayOfMonth;
-  timestamp = (timestamp<<8) + hour;
-  timestamp = (timestamp<<8) + minute;
-  timestamp = (timestamp<<8) + second;
-
-  return timestamp;
+  return (long)now();
 }

@@ -61,17 +61,15 @@ void setup(void)
   
     //set default values of vars
   lastTime = millis();
+  
+  toggleLogging();
 }
 
 
 void loop(void)
 {      
-  //If the button is pressed, arm logging
-  if(digitalRead(buttonPin) == HIGH)
-  {
-     toggleLogging();
-  }
-
+  Serial.println(getTimestampi());
+  
   //Read in any serial commands
   int incomingByte = 0;
   if(Serial.available() > 0)
@@ -99,7 +97,7 @@ void loop(void)
         }
         else if(input == "timestamp")
         {
-          Serial.println(getTimestampi());
+          //Serial.println(getTimestampi());
         }
         else
         {
@@ -109,13 +107,6 @@ void loop(void)
   }
   
   delay(1000);
-  
-  //Serial.println("Leaving loop");
-  //Randomly turn on/off led
-  //delay(random(100,2000));
-  //digitalWrite(ledPin, HIGH);
-  //delay(50);
-  //digitalWrite(ledPin, LOW);
 }
 
 /**
